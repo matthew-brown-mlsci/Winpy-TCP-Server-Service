@@ -1,0 +1,78 @@
+Howto build a python windows service \w winpython (python 3) on win server 2012:
+
+- install winpython
+
+- as administrator, run winpython command prompt
+	- set env variables:
+	set PYTHONHOME=C:\Scripts\python\WinPython-64bit-3.6.2.0Qt5\python-3.6.2.amd64\
+	set PYTHONPATH=C:\Scripts\python\WinPython-64bit-3.6.2.0Qt5\python-3.6.2.amd64\Lib\
+- create python service (use skeleton below)
+
+- run pyinstaller -F --hidden-import=win32timezone name_of_python_windows_service.py
+
+- dist\name_of_python_windows_service install
+
+- check windows services (in administrative under ctrl panel), start/stop service from here.
+
+
+import subprocess
+import signal
+import tempfile
+import win32api
+import cgi
+
+import sys
+import time
+import os
+import datetime
+import random
+import re
+import urllib
+import http.client
+import json
+
+import servicemanager
+import socket
+import sys
+import win32event
+import win32service
+import win32serviceutil
+import datetime
+
+
+class IF_Error_Service(win32serviceutil.ServiceFramework):
+    _svc_name_ = "MLab Print Interface Errors"
+    _svc_display_name_ = "MLab Print Interface Errors"
+
+    def __init__(self, args):
+        win32serviceutil.ServiceFramework.__init__(self, args)
+        self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
+        socket.setdefaulttimeout(60)
+
+    def SvcStop(self):
+        self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
+        win32event.SetEvent(self.hWaitStop)
+
+    def SvcDoRun(self):
+        rc = None
+        x = 0
+        while rc != win32event.WAIT_OBJECT_0:
+            if (x == 5) or (x == 35):
+                """ Put in all fucntional code here! """
+                if logging:
+                    log_entry("running process_if_errors()")
+                process_if_errors()
+            if x == 60:
+                x = 0;
+            time.sleep(1)
+            x = x + 1
+            rc = win32event.WaitForSingleObject(self.hWaitStop, 0)
+
+if __name__ == '__main__':
+    log_entry("test")
+    if len(sys.argv) == 1:
+        servicemanager.Initialize()
+        servicemanager.PrepareToHostSingle(IF_Error_Service)
+        servicemanager.StartServiceCtrlDispatcher()
+    else:
+        win32serviceutil.HandleCommandLine(IF_Error_Service)
